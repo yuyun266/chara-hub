@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- PWA化 第1步：链接“身份证” manifest.json -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00aaff"/>
+
+    <title>Chara-Hub 角色中枢</title>
+    <style>
+        /* CSS样式与之前完全相同，此处省略，以防你复制时遗漏 */
+        /* ... 你之前版本的所有<style>内容都在这里 ... */
+    </style>
+</head>
+<body>
+    <!-- HTML结构与之前完全相同，此处省略 -->
+    <!-- ... 你之前版本的所有<body>内的HTML内容都在这里 ... -->
+
+<script>
+    // =================================================================
+    // 从这里开始，是完整的、已经为你全部修改好的JavaScript代码
+    // =================================================================
+
+    // --- 数据模型 & DOM引用 ---
+    let presets = {};
+    let currentPresetId = null;
+    const defaultPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFYSURBVHhe7dixDQJBEAbgaAKiAkoiICGgIAuQAFmQBYgEBAQkgkEBBCQIBCgIBQUSIIhJ656Z2Rk7wY/38+z0dp77AwAAAFM4jUanTde6B+pajS7TCvTrQKVy2LzIqVwuD0k8T+P6BHrVYfPczQf06sKmey/gEwzIKyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gNyL/wIAAC5R2AxOq17rNkjf1Oj8P7wBHH0ft/fPzW4AAAAASUVORK5CYII='; // 默认头像数据
+
+    // 获取页面上需要操作的各个部分
+    const presetList = document.getElementById('preset-list');
+    const detailPlaceholder = document.getElementById('detail-placeholder');
+    const detailContent = document.getElementById('detail-content');
+    const portraitImg = document.getElementById('character-portrait');
+    const nameInput = document.getElementById('character-name-input');
+    const charJsonEditor = document.getElementById('character-json-editor');
+    const regexJsonEditor = document.getElementById('regex-json-editor');
+
+
+    // --- 升级第一部分：数据持久化工具函数 ---
+
+    /**
+     * "存档咒语": 把当前所有角色数据存进浏览器的“魔法保险箱”
+     */
+    function saveDataToLocalStorage() {
+        const dataToSave = { presets: presets, currentPresetId: currentPresetId };
+        localStorage.setItem('charaHubData', JSON.stringify(dataToSave));
+    }
+
+    /**
+     * "读档咒语": 尝试从“魔法保险箱”里读取上次存的数据
+     */
+    function loadDataFromLocalStorage() {
+        const savedData = localStorage.getItem('charaHubData');
+        if (savedData) {
+            const parsedData = JSON.parse(savedData);
+            presets = parsedData.presets || {};
+            currentPresetId = parsedData.currentPresetId || null;
+            return true; // 成功读档
+        }
+        return false; // 保险箱是空的
+    }
+
+
+    // --- 核心功能函数 (已植入“存档咒语”) ---
+
+    function createNewPreset() {
+        const newId = `preset-${Date.now()}`;
+        presets[newId] = {
+            id: newId, name: '新角色', characterPng: defaultPng,
+            characterJson: JSON.stringify({ name: '新角色', description: '' }, null, 2),
+            regexJson: JSON.stringify({ patterns: [] }, null, 2),
+        };
+        selectPreset(newId);
+        saveDataToLocalStorage(); // 新增！每次创建后都自动存档
+    }
+
+    function saveCurrentPreset() {
+        if (!currentPresetId) return;
+        try {
+            JSON.parse(charJsonEditor.value);
+            JSON.parse(regexJsonEditor.value);
+
+            presets[currentPresetId].name = nameInput.value;
+            presets[currentPresetId].characterJson = charJsonEditor.value;
+            presets[currentPresetId].regexJson = regexJsonEditor.value;
+
+            saveDataToLocalStorage(); // 新增！每次保存后都自动存档
+
+            alert('保存成功!');
+            renderPresetList();
+        } catch (e) {
+            alert('错误: JSON 格式不正确，请检查！');
+        }
+    }
+
+    function deleteCurrentPreset() {
+        if (!currentPresetId) return;
+        if (confirm(`确定要删除预设「${presets[currentPresetId].name}」吗？`)) {
+            delete presets[currentPresetId];
+            currentPresetId = null;
+            saveDataToLocalStorage(); // 新增！每次删除后都自动存档
+            renderPresetList();
+            displayPresetDetails();
+        }
+    }
+
+    function handlePngUpload(event) {
+        if (!currentPresetId) return;
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                presets[currentPresetId].characterPng = e.target.result;
+                portraitImg.src = e.target.result;
+                saveDataToLocalStorage(); // 新增！每次上传头像后都自动存档
+                renderPresetList();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // --- 辅助与界面渲染函数 (这部分无需修改) ---
+    function renderPresetList() {
+        presetList.innerHTML = '';
+        const searchTerm = document.getElementById('search-bar').value.toLowerCase();
+        Object.values(presets)
+            .filter(p => p.name.toLowerCase().includes(searchTerm))
+            .forEach(preset => {
+                const li = document.createElement('li');
+                li.className = 'preset-item';
+                li.dataset.id = preset.id;
+                if (preset.id === currentPresetId) li.classList.add('active');
+                li.innerHTML = `<img src="${preset.characterPng}" alt="${preset.name}"><span>${preset.name}</span>`;
+                li.onclick = () => selectPreset(preset.id);
+                presetList.appendChild(li);
+            });
+    }
+
+    function selectPreset(id) {
+        currentPresetId = id;
+        renderPresetList();
+        displayPresetDetails();
+    }
+
+    function displayPresetDetails() {
+        if (!currentPresetId || !presets[currentPresetId]) {
+            detailPlaceholder.style.display = 'flex';
+            detailContent.style.display = 'none';
+        } else {
+            detailPlaceholder.style.display = 'none';
+            detailContent.style.display = 'flex';
+            const preset = presets[currentPresetId];
+            portraitImg.src = preset.characterPng;
+            nameInput.value = preset.name;
+            charJsonEditor.value = preset.characterJson;
+            regexJsonEditor.value = preset.regexJson;
+        }
+    }
+    document.getElementById('search-bar').addEventListener('input', renderPresetList);
+
+    // --- PWA化 第2步：“后勤总管”上岗咒语 ---
+    function registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker 已就绪'))
+                    .catch(err => console.log('Service Worker 加载失败: ', err));
+            });
+        }
+    }
+
+    // --- 初始化 (程序启动的地方) ---
+    window.onload = () => {
+        // 优先执行“读档咒语”
+        if (!loadDataFromLocalStorage() || Object.keys(presets).length === 0) {
+            // 如果读档失败或没存档，才创建第一个示例
+            createNewPreset();
+        }
+
+        // 渲染界面
+        renderPresetList();
+        displayPresetDetails();
+
+        // 让“后勤总管”上岗
+        registerServiceWorker();
+    };
+
+</script>
+</body>
+</html>
