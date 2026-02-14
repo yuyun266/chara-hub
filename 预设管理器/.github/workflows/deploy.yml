@@ -1,0 +1,42 @@
+# 我们的新“工作手册”名称
+name: Deploy Chara-Hub to Pages
+
+# 触发条件：当我们向 main 分支推送代码时，自动运行
+on:
+  push:
+    branches: ["main"]
+
+# 权限设置：给予流水线部署的权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 工作内容（Jobs）
+jobs:
+  # 只有一个工作，我们叫它“部署”
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      # 第1步：先把我们的代码从仓库下载到流水线的工作空间里
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # 第2步：这一步什么都不做，就是把所有文件原封不动地打包成“产物”
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      # 第3步：把打包好的产物上传，准备部署
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          # 上传当前目录下的所有文件
+          path: '.'
+
+      # 第4步：执行部署！把上传的产物发布到你的网址上
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
