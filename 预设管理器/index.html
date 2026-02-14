@@ -29,13 +29,13 @@
     const defaultPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFYSURBVHhe7dixDQJBEAbgaAKiAkoiICGgIAuQAFmQBYgEBAQkgkEBBCQIBCgIBQUSIIhJ656Z2Rk7wY/38+z0dp77AwAAAFM4jUanTde6B+pajS7TCvTrQKVy2LzIqVwuD0k8T+P6BHrVYfPczQf06sKmey/gEwzIKyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gPILyA/gPwA8gNyL/wIAAC5R2AxOq17rNkjf1Oj8P7wBHH0ft/fPzW4AAAAASUVORK5CYII='; // 默认头像数据
 
     // 获取页面上需要操作的各个部分
-    const presetList = document.getElementById('preset-list');
-    const detailPlaceholder = document.getElementById('detail-placeholder');
-    const detailContent = document.getElementById('detail-content');
-    const portraitImg = document.getElementById('character-portrait');
-    const nameInput = document.getElementById('character-name-input');
-    const charJsonEditor = document.getElementById('character-json-editor');
-    const regexJsonEditor = document.getElementById('regex-json-editor');
+    const presetList = document。getElementById('preset-list');
+    const detailPlaceholder = document。getElementById('detail-placeholder');
+    const detailContent = document。getElementById('detail-content');
+    const portraitImg = document。getElementById('character-portrait');
+    const nameInput = document。getElementById('character-name-input');
+    const charJsonEditor = document。getElementById('character-json-editor');
+    const regexJsonEditor = document。getElementById('regex-json-editor');
 
 
     // --- 升级第一部分：数据持久化工具函数 ---
@@ -45,18 +45,18 @@
      */
     function saveDataToLocalStorage() {
         const dataToSave = { presets: presets, currentPresetId: currentPresetId };
-        localStorage.setItem('charaHubData', JSON.stringify(dataToSave));
+        localStorage。setItem('charaHubData', JSON.stringify(dataToSave));
     }
 
     /**
      * "读档咒语": 尝试从“魔法保险箱”里读取上次存的数据
      */
     function loadDataFromLocalStorage() {
-        const savedData = localStorage.getItem('charaHubData');
+        const savedData = localStorage。getItem('charaHubData');
         if (savedData) {
-            const parsedData = JSON.parse(savedData);
-            presets = parsedData.presets || {};
-            currentPresetId = parsedData.currentPresetId || null;
+            const parsedData = JSON。parse(savedData);
+            presets = parsedData。presets || {};
+            currentPresetId = parsedData。currentPresetId || null;
             return true; // 成功读档
         }
         return false; // 保险箱是空的
@@ -190,3 +190,4 @@
 </script>
 </body>
 </html>
+
